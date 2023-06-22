@@ -21,49 +21,52 @@ from .look import Look
 from .pps import QiXiu
 from .qf import QF
 from .zhanqi import ZhanQi
+
 # from .yy import YY
 
-__all__ = ['DanmakuClient']
+__all__ = ["DanmakuClient"]
 
 
 class DanmakuClient:
     def __init__(self, url, q):
-        self.__url = ''
+        self.__url = ""
         self.__site = None
         self.__hs = None
         self.__ws = None
         self.__stop = False
         self.__dm_queue = q
         self.__link_status = True
-        if 'http://' == url[:7] or 'https://' == url[:8]:
+        if "http://" == url[:7] or "https://" == url[:8]:
             self.__url = url
         else:
-            self.__url = 'http://' + url
-        for u, s in {'douyu.com': Douyu,
-                     'live.bilibili.com': Bilibili,
-                     'huya.com': Huya,
-                     'huomao.com': HuoMao,
-                     'kuaishou.com': KuaiShou,
-                     'egame.qq.com': eGame,
-                     'huajiao.com': HuaJiao,
-                     'inke.cn': Inke,
-                     'cc.163.com': CC,
-                     'fanxing.kugou.com': KuGou,
-                     'zhanqi.tv': ZhanQi,
-                     'longzhu.com': LongZhu,
-                     'pps.tv': QiXiu,
-                     'qf.56.com': QF,
-                     'laifeng.com': LaiFeng,
-                     'look.163.com': Look,
-                     'acfun.cn': AcFun,
-                     '173.com': YiQiShan,
-                     'yy.com': ''}.items():
-            if re.match(r'^(?:http[s]?://)?.*?%s/(.+?)$' % u, url):
+            self.__url = "http://" + url
+        for u, s in {
+            "douyu.com": Douyu,
+            "live.bilibili.com": Bilibili,
+            "huya.com": Huya,
+            "huomao.com": HuoMao,
+            "kuaishou.com": KuaiShou,
+            "egame.qq.com": eGame,
+            "huajiao.com": HuaJiao,
+            "inke.cn": Inke,
+            "cc.163.com": CC,
+            "fanxing.kugou.com": KuGou,
+            "zhanqi.tv": ZhanQi,
+            "longzhu.com": LongZhu,
+            "pps.tv": QiXiu,
+            "qf.56.com": QF,
+            "laifeng.com": LaiFeng,
+            "look.163.com": Look,
+            "acfun.cn": AcFun,
+            "173.com": YiQiShan,
+            "yy.com": "",
+        }.items():
+            if re.match(r"^(?:http[s]?://)?.*?%s/(.+?)$" % u, url):
                 self.__site = s
                 self.__u = u
                 break
         if self.__site is None:
-            print('Invalid link!')
+            print("Invalid link!")
             exit()
         self.__hs = aiohttp.ClientSession()
 
@@ -72,7 +75,11 @@ class DanmakuClient:
         self.__ws = await self.__hs.ws_connect(ws_url)
         if reg_datas:
             for reg_data in reg_datas:
-                if self.__u == 'qf.56.com' or self.__u == 'laifeng.com' or self.__u == 'look.163.com':
+                if (
+                    self.__u == "qf.56.com"
+                    or self.__u == "laifeng.com"
+                    or self.__u == "look.163.com"
+                ):
                     await self.__ws.send_str(reg_data)
                 else:
                     await self.__ws.send_bytes(reg_data)
@@ -81,7 +88,11 @@ class DanmakuClient:
         while not self.__stop and self.__site.heartbeat:
             await asyncio.sleep(self.__site.heartbeatInterval)
             try:
-                if self.__u == 'qf.56.com' or self.__u == 'laifeng.com' or self.__u == 'look.163.com':
+                if (
+                    self.__u == "qf.56.com"
+                    or self.__u == "laifeng.com"
+                    or self.__u == "look.163.com"
+                ):
                     await self.__ws.send_str(self.__site.heartbeat)
                 else:
                     await self.__ws.send_bytes(self.__site.heartbeat)
@@ -100,7 +111,7 @@ class DanmakuClient:
             await asyncio.sleep(1)
 
     async def init_ws_huajiao(self):
-        rid = re.search(r'\d+', self.__url).group(0)
+        rid = re.search(r"\d+", self.__url).group(0)
         s = self.__site(rid)
         self.__ws = await self.__hs.ws_connect(self.__site.ws_url)
         await self.__ws.send_bytes(s.sendHandshakePack())
@@ -118,22 +129,22 @@ class DanmakuClient:
 
     async def init_ws_acfun(self):
         self.__ws = await self.__hs.ws_connect(self.__site.ws_url)
-        await self.__ws.send_bytes(self.__s.encode_packet('register'))
+        await self.__ws.send_bytes(self.__s.encode_packet("register"))
 
     async def ping_acfun(self):
         while True:
             await asyncio.sleep(1)
-            await self.__ws.send_bytes(self.__s.encode_packet('ping'))
+            await self.__ws.send_bytes(self.__s.encode_packet("ping"))
 
     async def keepalive_acfun(self):
         while True:
             await asyncio.sleep(50)
-            await self.__ws.send_bytes(self.__s.encode_packet('keepalive'))
+            await self.__ws.send_bytes(self.__s.encode_packet("keepalive"))
 
     async def heartbeat_acfun(self):
         while True:
             await asyncio.sleep(10)
-            await self.__ws.send_bytes(self.__s.encode_packet('ztlivecsheartbeat'))
+            await self.__ws.send_bytes(self.__s.encode_packet("ztlivecsheartbeat"))
 
     async def fetch_danmaku_acfun(self):
         count = 0
@@ -141,26 +152,26 @@ class DanmakuClient:
             self.__link_status = True
             ms = self.__s.decode_packet(msg.data)
             if count == 0:
-                await self.__ws.send_bytes(self.__s.encode_packet('ztlivecsenterroom'))
+                await self.__ws.send_bytes(self.__s.encode_packet("ztlivecsenterroom"))
                 count += 1
             for m in ms:
                 await self.__dm_queue.put(m)
 
     async def init_ws_173(self):
         self.__ws = await self.__hs.ws_connect(self.__site.ws_url)
-        await self.__ws.send_bytes(self.__s.pack('startup'))
+        await self.__ws.send_bytes(self.__s.pack("startup"))
         await asyncio.sleep(1)
-        await self.__ws.send_bytes(self.__s.pack('enterroomreq'))
+        await self.__ws.send_bytes(self.__s.pack("enterroomreq"))
 
     async def tcphelloreq_173(self):
         while True:
             await asyncio.sleep(10)
-            await self.__ws.send_bytes(self.__s.pack('tcphelloreq'))
+            await self.__ws.send_bytes(self.__s.pack("tcphelloreq"))
 
     async def roomhelloreq_173(self):
         while True:
             await asyncio.sleep(5)
-            await self.__ws.send_bytes(self.__s.pack('roomhelloreq'))
+            await self.__ws.send_bytes(self.__s.pack("roomhelloreq"))
 
     async def fetch_danmaku_173(self):
         async for msg in self.__ws:
@@ -191,10 +202,10 @@ class DanmakuClient:
                 await self.__dm_queue.put(m)
 
     async def start(self):
-        if self.__u == 'huajiao.com':
+        if self.__u == "huajiao.com":
             await self.init_ws_huajiao()
-        elif self.__u == 'acfun.cn':
-            rid = re.search(r'\d+', self.__url).group(0)
+        elif self.__u == "acfun.cn":
+            rid = re.search(r"\d+", self.__url).group(0)
             self.__s = self.__site(rid)
             await self.init_ws_acfun()
             await asyncio.gather(
@@ -203,8 +214,8 @@ class DanmakuClient:
                 self.keepalive_acfun(),
                 self.heartbeat_acfun(),
             )
-        elif self.__u == '173.com':
-            rid = self.__url.split('/')[-1]
+        elif self.__u == "173.com":
+            rid = self.__url.split("/")[-1]
             self.__s = self.__site(rid)
             await self.init_ws_173()
             await asyncio.gather(
@@ -212,14 +223,11 @@ class DanmakuClient:
                 self.tcphelloreq_173(),
                 self.roomhelloreq_173(),
             )
-        elif self.__u == 'yy.com':
-            rid = self.__url.split('/')[-1]
+        elif self.__u == "yy.com":
+            rid = self.__url.split("/")[-1]
             self.__s = self.__site(int(rid))
             await self.init_ws_yy()
-            await asyncio.gather(
-                self.fetch_danmaku_yy(),
-                self.heartbeat_yy()
-            )
+            await asyncio.gather(self.fetch_danmaku_yy(), self.heartbeat_yy())
         else:
             await self.init_ws()
             await asyncio.gather(

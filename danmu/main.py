@@ -9,22 +9,24 @@ import danmaku
 async def printer(q):
     while True:
         m = await q.get()
-        if m['msg_type'] == 'danmaku':
+        if m["msg_type"] == "danmaku":
             print(f'{m["name"]}：{m["content"]}')
 
 
 async def main(url):
     q = asyncio.Queue()
     dmc = danmaku.DanmakuClient(url, q)
-    asyncio.create_task(printer(q))
+    asyncio.get_event_loop().create_task(printer(q))
     await dmc.start()
 
 
-a = input('请输入直播间地址：\n')
-asyncio.run(main(a))
+a = input("请输入直播间地址：\n")
+# asyncio.run(main(a))
+asyncio.get_event_loop().run_until_complete(main(a))
+
 
 # 虎牙直播：https://www.huya.com/11352915
-# 斗鱼直播：https://www.douyu.com/85894
+# 斗鱼直播：https://www.douyu.com/74751
 # B站直播：https://live.bilibili.com/70155
 # 快手直播：https://live.kuaishou.com/u/jjworld126
 # 火猫直播：
